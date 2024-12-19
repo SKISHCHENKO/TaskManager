@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tasks List</title>
+</head>
+<body>
+<h1>Tasks List</h1>
+<ul>
+    <!-- Цикл для отображения задач -->
+    <th:block th:each="task : ${tasks}">
+        <li th:text="${task.name}"></li>
+    </th:block>
+</ul>
+</body>
+</html>
