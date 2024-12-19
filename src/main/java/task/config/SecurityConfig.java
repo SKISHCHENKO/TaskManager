@@ -1,6 +1,5 @@
 package task.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,6 +25,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/home").permitAll()
                         .requestMatchers("/register", "/login", "/resources/**").permitAll() // Доступ к регистрации и статическим файлам
                         .requestMatchers(HttpMethod.GET, "/api/tasks").hasAnyRole("USER", "ADMIN", "GUEST") // Гости могут только GET
                         .requestMatchers(HttpMethod.POST, "/api/tasks").hasAnyRole("USER", "ADMIN") // POST для USER и ADMIN

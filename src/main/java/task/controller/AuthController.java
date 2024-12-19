@@ -24,6 +24,12 @@ public class AuthController {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
+    // Главная страница /home
+    @GetMapping("/home")
+    public String homePage(Model model) {
+        model.addAttribute("message", "Welcome to TaskManager!");
+        return "home"; // Возвращаем home.html
+    }
 
     // Отображение формы регистрации
     @GetMapping("/register")
