@@ -36,37 +36,34 @@
             <p><strong>Priority:</strong> <span th:text="${task.priority}"></span></p> <!-- Приоритет задачи -->
             <p><strong>Completed:</strong> <span th:text="${task.completed}"></span></p> <!-- Статус выполнения задачи -->
 
-            <!-- Форма для удаления задачи -->
-            <form action="/tasks" method="post" id="deleteForm" class="delete-form">
-                <input type="hidden" name="id" th:value="${task.id}">
-                <button type="submit" onclick="deleteTask(event, ${task.id})">Delete Task</button>
-            </form>
+            <!-- Кнопка для удаления задачи -->
+            <button type="button" onclick="deleteTask(${task.id})">Delete Task</button>
             <hr />
         </div>
     </th:block>
 </div>
 
-
 <script>
     // Функция для удаления задачи
-    function deleteTask(event, taskId) {
-        event.preventDefault(); // Предотвращаем стандартное поведение формы
-
-        fetch("/tasks/" + taskId, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                // Перезагрузим страницу после успешного удаления
-                window.location.href = "/tasks";
-            } else {
-                alert("Error deleting task");
-            }
-        })
-        .catch(error => console.error("Error:", error));
+    function deleteTask(taskId) {
+        console.log("Deleting task with ID:", taskId);
+        if (confirm("Are you sure you want to delete this task?")) {
+            fetch("/tasks/" + taskId, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Перезагрузим страницу после успешного удаления
+                    window.location.href = "/tasks";
+                } else {
+                    alert("Error deleting task");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
     }
 
     // Функция для отправки данных формы для создания задачи
