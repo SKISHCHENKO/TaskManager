@@ -26,7 +26,11 @@ public class Task {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskStatus status; // Новый атрибут для статуса задачи
+    private TaskStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TaskPriority priority;
 
     // Изменённый конструктор, теперь с параметром для статуса
     public Task(String title, String description, boolean completed, TaskStatus status) {

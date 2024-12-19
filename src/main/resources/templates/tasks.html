@@ -6,18 +6,93 @@
     <title>Tasks List</title>
 </head>
 <body>
-<h1>Tasks List</h1>
-<ul>
-    <!-- Цикл для отображения задач -->
+
+<!-- Форма для создания новой задачи -->
+<form id="taskForm">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title" required>
+
+    <label for="description">Description</label>
+    <input type="text" id="description" name="description" required>
+
+    <label for="priority">Priority</label>
+    <select name="priority" id="priority">
+        <option value="LOW">Low</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="HIGH">High</option>
+    </select>
+
+    <button type="submit">Create Task</button>
+</form>
+<h1>Existing Tasks</h1>
+
+<!-- Цикл для отображения задач -->
+<div>
     <th:block th:each="task : ${tasks}">
-        <li>
-            <strong>Title:</strong> <span th:text="${task.title}"></span><br>
-            <strong>Description:</strong> <span th:text="${task.description}"></span><br>
-            <strong>Completed:</strong> <span th:text="${task.completed}"></span><br>
-            <strong>Status:</strong> <span th:text="${task.status}"></span><br>
-        </li>
-        <hr>
+        <div>
+            <h3 th:text="${task.title}"></h3> <!-- Отображение заголовка задачи -->
+            <p><strong>Description:</strong> <span th:text="${task.description}"></span></p> <!-- Описание задачи -->
+            <p><strong>Status:</strong> <span th:text="${task.status}"></span></p> <!-- Статус задачи -->
+            <p><strong>Priority:</strong> <span th:text="${task.priority}"></span></p> <!-- Приоритет задачи -->
+            <p><strong>Completed:</strong> <span th:text="${task.completed}"></span></p> <!-- Статус выполнения задачи -->
+
+            <!-- Форма для удаления задачи -->
+            <form action="/tasks" method="post" id="deleteForm" class="delete-form">
+                <input type="hidden" name="id" th:value="${task.id}">
+                <button type="submit" onclick="deleteTask(event, ${task.id})">Delete Task</button>
+            </form>
+            <hr />
+        </div>
     </th:block>
-</ul>
+</div>
+
+
+<script>
+    // Функция для удаления задачи
+    function deleteTask(event, taskId) {
+        event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+        fetch("/tasks/" + taskId, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Перезагрузим страницу после успешного удаления
+                window.location.href = "/tasks";
+            } else {
+                alert("Error deleting task");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    // Функция для отправки данных формы для создания задачи
+    document.getElementById("taskForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const taskData = {
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            priority: document.getElementById("priority").value
+        };
+
+        fetch("/tasks", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(taskData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Перенаправление на страницу с задачами после успешного создания
+            window.location.href = "/tasks";
+        })
+        .catch(error => console.error("Error:", error));
+    });
+</script>
 </body>
 </html>

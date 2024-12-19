@@ -52,14 +52,14 @@ public class TaskController {
     public Task updateTask(@PathVariable Long id, @RequestBody Task taskDetails) {
         Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
 
-        // Обновление всех полей задачи, включая статус
+        // Обновление всех полей задачи
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
         task.setCompleted(taskDetails.isCompleted());
 
-        // Статус задачи можно обновить через setter
-        if (taskDetails.getStatus() != null) {
-            task.setStatus(taskDetails.getStatus());
+        // Обновление приоритета
+        if (taskDetails.getPriority() != null) {
+            task.setPriority(taskDetails.getPriority());
         }
 
         return taskRepository.save(task);
