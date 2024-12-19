@@ -2,15 +2,16 @@ package task.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import task.model.Task;
 import task.model.TaskStatus;
 import task.repository.TaskRepository;
 
 import java.util.List;
-import java.util.Optional;
 
-@RestController
+@Controller
 @RequestMapping("/tasks")
 public class TaskController {
 
@@ -21,10 +22,12 @@ public class TaskController {
         this.taskRepository = taskRepository;
     }
 
-    // Получить все задачи
+    // Получить все задачи и отображать их в tasks.html
     @GetMapping
-    public List<Task> getTasks() {
-        return taskRepository.findAll();
+    public String getTasks(Model model) {
+        List<Task> tasks = taskRepository.findAll();
+        model.addAttribute("tasks", tasks);  // Добавляем список задач в модель
+        return "tasks";  // Возвращаем имя шаблона tasks.html
     }
 
     // Создать новую задачу
@@ -40,8 +43,8 @@ public class TaskController {
 
     // Получить задачу по ID
     @GetMapping("/{id}")
-    public Optional<Task> getTaskById(@PathVariable Long id) {
-        return taskRepository.findById(id);
+    public Task getTaskById(@PathVariable Long id) {
+        return taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
     }
 
     // Обновить задачу по ID

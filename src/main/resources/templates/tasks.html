@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tasks List</title>
 </head>
 <body>
@@ -8,7 +10,13 @@
 <ul>
     <!-- Цикл для отображения задач -->
     <th:block th:each="task : ${tasks}">
-        <li th:text="${task.name}"></li>
+        <li>
+            <strong>Title:</strong> <span th:text="${task.title}"></span><br>
+            <strong>Description:</strong> <span th:text="${task.description}"></span><br>
+            <strong>Completed:</strong> <span th:text="${task.completed}"></span><br>
+            <strong>Status:</strong> <span th:text="${task.status}"></span><br>
+        </li>
+        <hr>
     </th:block>
 </ul>
 </body>
