@@ -3,33 +3,34 @@ package task.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import task.service.CustomUserDetailsService;
+
+import javax.sql.DataSource;
 
 @Configuration
-@EnableWebSecurity
+@EnableGlobalMethodSecurity(
+        securedEnabled = true,          // Для @Secured
+        jsr250Enabled = true,           // Для @RolesAllowed
+        prePostEnabled = true           // Для @PreAuthorize и @PostAuthorize
+)
 public class SecurityConfig {
-
-    private final CustomUserDetailsService userDetailsService;
-
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Отключаем CSRF (можно включить при необходимости)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/home").permitAll()
                         .requestMatchers("/register", "/login", "/resources/**").permitAll() // Доступ к регистрации и статическим файлам
-                        .requestMatchers(HttpMethod.GET, "/api/tasks").hasAnyRole("USER", "ADMIN", "GUEST") // Гости могут только GET
-                        .requestMatchers(HttpMethod.POST, "/api/tasks").hasAnyRole("USER", "ADMIN") // POST для USER и ADMIN
-                        .requestMatchers(HttpMethod.DELETE, "/api/tasks").hasRole("ADMIN") // DELETE только для ADMIN
+                        .requestMatchers(HttpMethod.GET, "/tasks/**").hasAnyRole("USER", "ADMIN", "GUEST") // Гости могут только GET
+                        .requestMatchers(HttpMethod.POST, "/tasks/**").hasAnyRole("USER", "ADMIN") // POST для USER и ADMIN
+                        .requestMatchers(HttpMethod.DELETE, "/tasks/**").hasRole("ADMIN") // DELETE только для ADMIN
                         .anyRequest().authenticated() // Остальные запросы требуют аутентификации
                 )
                 .formLogin(login -> login
@@ -46,7 +47,30 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+        InMemoryUserDetailsManager userDetailsManager = new InMemoryUserDetailsManager();
+
+        // Пользователь с ролью GUEST (ROLE_READ)
+        userDetailsManager.createUser(User
+                .withUsername("guest")
+                .password(passwordEncoder.encode("guest123"))
+                .roles("READ") // ROLE_READ
+                .build());
+
+        // Пользователь с ролью USER (ROLE_WRITE)
+        userDetailsManager.createUser(User
+                .withUsername("user")
+                .password(passwordEncoder.encode("user123"))
+                .roles("WRITE") // ROLE_WRITE
+                .build());
+
+        // Пользователь с ролью ADMIN (ROLE_DELETE)
+        userDetailsManager.createUser(User
+                .withUsername("admin")
+                .password(passwordEncoder.encode("admin123"))
+                .roles("DELETE") // ROLE_DELETE
+                .build());
+
+        return userDetailsManager;
     }
 }

@@ -32,6 +32,9 @@ public class Task {
     @Column(nullable = false)
     private TaskPriority priority;
 
+    @Column(nullable = false)
+    private String username; // Имя пользователя, связанное с задачей
+
     // Изменённый конструктор, теперь с параметром для статуса
     public Task(String title, String description, boolean completed, TaskStatus status) {
         this.title = title;
