@@ -1,13 +1,17 @@
 package task.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -20,6 +24,25 @@ import javax.sql.DataSource;
         prePostEnabled = true           // Для @PreAuthorize и @PostAuthorize
 )
 public class SecurityConfig {
+
+    // DataSource бин, если он еще не настроен в вашем проекте.
+    @Bean
+    public DataSource dataSource() {
+        HikariConfig hikariConfig = new HikariConfig();
+
+        // Настройка подключения к базе данных
+        hikariConfig.setJdbcUrl("jdbc:postgresql://localhost:5432/task_db"); // Укажите URL вашей базы данных
+        hikariConfig.setUsername("postgres"); // Ваше имя пользователя
+        hikariConfig.setPassword("postgres"); // Ваш пароль
+
+        // Опциональные настройки
+        hikariConfig.setDriverClassName("org.postgresql.Driver");
+        hikariConfig.setMaximumPoolSize(10); // Максимальное количество соединений в пуле
+        hikariConfig.setMinimumIdle(5); // Минимальное количество соединений в пуле
+        hikariConfig.setIdleTimeout(30000); // Время простоя соединения в миллисекундах
+
+        return new HikariDataSource(hikariConfig);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -46,31 +69,31 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Настроим userDetailsManager для загрузки пользователей и ролей
     @Bean
-    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
-        InMemoryUserDetailsManager userDetailsManager = new InMemoryUserDetailsManager();
+    public JdbcUserDetailsManager userDetailsManager(DataSource dataSource) {
+        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
 
-        // Пользователь с ролью GUEST (ROLE_READ)
-        userDetailsManager.createUser(User
-                .withUsername("guest")
-                .password(passwordEncoder.encode("guest123"))
-                .roles("READ") // ROLE_READ
-                .build());
+        // Запрос для загрузки пользователей
+        manager.setUsersByUsernameQuery("SELECT login AS username, password, true AS enabled FROM users WHERE login = ?");
+        // Запрос для загрузки ролей пользователя
+        manager.setAuthoritiesByUsernameQuery("SELECT login AS username, CONCAT('ROLE_', role) AS authority FROM users WHERE login = ?");
 
-        // Пользователь с ролью USER (ROLE_WRITE)
-        userDetailsManager.createUser(User
-                .withUsername("user")
-                .password(passwordEncoder.encode("user123"))
-                .roles("WRITE") // ROLE_WRITE
-                .build());
+        return manager;
+    }
 
-        // Пользователь с ролью ADMIN (ROLE_DELETE)
-        userDetailsManager.createUser(User
-                .withUsername("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .roles("DELETE") // ROLE_DELETE
-                .build());
+    // Настроим AuthenticationManager для аутентификации
+    @Bean
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(userDetailsManager(dataSource()))
+                .passwordEncoder(passwordEncoder());
+        return authenticationManagerBuilder.build();
+    }
 
-        return userDetailsManager;
+    // Настроим PasswordEncoder для шифрования паролей
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
