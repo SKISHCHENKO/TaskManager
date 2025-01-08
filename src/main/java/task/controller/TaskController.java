@@ -2,6 +2,8 @@ package task.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +40,8 @@ public class TaskController {
         if (task.getStatus() == null) {
             task.setStatus(TaskStatus.PENDING); // Например, статус "PENDING" по умолчанию
         }
+        String username = getCurrentUsername();
+        task.setUsername(username); // Устанавливаем имя текущего пользователя
         return taskRepository.save(task);
     }
 
@@ -70,6 +74,34 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable Long id) {
         Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+        String currentUsername = getCurrentUsername();
+
+        // Проверяем, является ли текущий пользователь владельцем задачи или администратором
+        if (!task.getUsername().equals(currentUsername) && !isAdmin()) {
+            throw new SecurityException("You are not allowed to delete this task");
+        }
+
         taskRepository.delete(task);
+    }
+    // Показывает задачи текущего пользователя
+    @GetMapping("/my-tasks")
+    public String getTasksForCurrentUser(Model model) {
+        String username = getCurrentUsername();
+        List<Task> tasks = taskRepository.findByUsername(username);
+        model.addAttribute("tasks", tasks);
+        return "tasks";  // Шаблон tasks.html покажет только задачи текущего пользователя
+    }
+
+    private String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            return authentication.getName(); // Вернёт имя текущего пользователя
+        }
+        return null;
+    }
+    private boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
     }
 }
